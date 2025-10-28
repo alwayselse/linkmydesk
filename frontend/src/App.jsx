@@ -52,24 +52,42 @@ function SuccessCard({ shortCode }) {
   };
 
   return (
-    <div className="w-full max-w-2xl bg-zinc-800 border border-zinc-700 rounded-xl p-8 text-center">
-      <div className="mb-4">
-        <p className="text-zinc-400 text-lg mb-3">Your code is ready!</p>
-        <div className="flex items-center justify-center gap-4">
-          <p className="text-6xl font-bold text-indigo-500 tracking-wider font-mono">
-            {shortCode}
-          </p>
+    <div className="w-full max-w-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700 rounded-xl p-10 text-center shadow-2xl shadow-indigo-600/10">
+      <div className="mb-6">
+        {/* Success Icon */}
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600/20 rounded-full mb-4">
+          <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-zinc-400 text-lg mb-6">Your presentation code is ready!</p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="px-8 py-4 bg-zinc-900 border-2 border-indigo-600/30 rounded-lg">
+            <p className="text-7xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-wider font-mono">
+              {shortCode}
+            </p>
+          </div>
           <button
             onClick={handleCopy}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105"
+            className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg shadow-indigo-600/30"
           >
-            Copy
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Copy Code
+            </div>
           </button>
         </div>
       </div>
-      <p className="text-zinc-500 text-sm mt-6">
-        Share this code to let others view your presentation
-      </p>
+      <div className="pt-6 border-t border-zinc-700">
+        <p className="text-zinc-500 text-sm">
+          ✨ Share this code to let anyone view your presentation
+        </p>
+        <p className="text-zinc-600 text-xs mt-2">
+          Expires in 24 hours • Anonymous • Secure
+        </p>
+      </div>
     </div>
   );
 }
@@ -150,10 +168,14 @@ function Uploader() {
     <>
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mb-4"></div>
-            <p className="text-zinc-100 text-xl font-semibold">Uploading, please wait...</p>
+            <div className="relative inline-block mb-6">
+              <div className="w-20 h-20 border-4 border-zinc-700 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-20 h-20 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-zinc-100 text-xl font-semibold mb-2">Uploading your presentation</p>
+            <p className="text-zinc-500 text-sm">This might take a moment...</p>
           </div>
         </div>
       )}
@@ -163,48 +185,23 @@ function Uploader() {
         {!file ? (
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
+            className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-300 ${
               isDragActive
-                ? 'border-indigo-600 bg-indigo-600/10'
-                : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800'
+                ? 'border-indigo-500 bg-indigo-600/10 scale-105 shadow-xl shadow-indigo-600/20'
+                : 'border-zinc-700 bg-zinc-800/50 hover:border-indigo-600/50 hover:bg-zinc-800 hover:shadow-lg'
             }`}
           >
             <input {...getInputProps()} />
             <div className="flex flex-col items-center gap-4">
-              <svg
-                className="w-16 h-16 text-zinc-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              <div>
-                <p className="text-zinc-300 text-lg font-medium mb-2">
-                  Drag & drop your .pptx or .pdf here
-                </p>
-                <p className="text-zinc-500 text-sm">or</p>
-              </div>
-              <button
-                type="button"
-                className="px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-zinc-100 font-medium rounded-lg transition-all duration-200"
-              >
-                Click to select file
-              </button>
-              <p className="text-zinc-600 text-xs mt-2">Max file size: 50MB</p>
-            </div>
-          </div>
-        ) : (
-          <div className="border-2 border-zinc-700 rounded-xl p-8 bg-zinc-800/50 text-center">
-            <div className="flex flex-col items-center gap-6">
-              <div className="flex items-center gap-3 text-zinc-100">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
+                isDragActive 
+                  ? 'bg-indigo-600/20 scale-110' 
+                  : 'bg-zinc-700/50'
+              }`}>
                 <svg
-                  className="w-8 h-8 text-indigo-500"
+                  className={`w-10 h-10 transition-colors duration-300 ${
+                    isDragActive ? 'text-indigo-400' : 'text-zinc-500'
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -213,20 +210,60 @@ function Uploader() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                   />
                 </svg>
-                <p className="text-lg font-medium">{file.name}</p>
+              </div>
+              <div>
+                <p className="text-zinc-200 text-lg font-semibold mb-2">
+                  {isDragActive ? 'Drop your file here' : 'Drag & drop your presentation'}
+                </p>
+                <p className="text-zinc-500 text-sm mb-1">Supports .pptx and .pdf files</p>
+                <p className="text-zinc-600 text-xs">Maximum file size: 50MB</p>
+              </div>
+              {!isDragActive && (
+                <button
+                  type="button"
+                  className="mt-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-zinc-100 font-medium rounded-lg transition-all duration-200 transform hover:scale-105"
+                >
+                  Choose File
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="border-2 border-indigo-600/30 rounded-xl p-8 bg-gradient-to-br from-zinc-800 to-zinc-900 text-center shadow-xl">
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex items-center gap-3 text-zinc-100">
+                <div className="w-12 h-12 bg-indigo-600/20 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-7 h-7 text-indigo-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className="text-lg font-semibold text-zinc-100">{file.name}</p>
+                  <p className="text-sm text-zinc-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
               </div>
               <button
                 onClick={handleUpload}
-                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+                className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/30"
               >
-                Get Your Code
+                Get Your Code →
               </button>
               <button
                 onClick={handleReset}
-                className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm underline"
+                className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm underline underline-offset-2"
               >
                 Choose a different file
               </button>
@@ -239,32 +276,167 @@ function Uploader() {
 }
 
 // ============================================
+// Component: Logo
+// ============================================
+function Logo() {
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <div className="relative">
+        {/* Icon Background */}
+        <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/50 transform hover:scale-110 transition-transform duration-200">
+          {/* Link Icon */}
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent tracking-tight">
+          linkmydesk
+        </h1>
+        <p className="text-xs text-zinc-500 tracking-wider">INSTANT PRESENTATION SHARING</p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// Component: Footer
+// ============================================
+function Footer() {
+  return (
+    <footer className="w-full border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-sm">
+      {/* How it Works Section */}
+      <div className="max-w-5xl mx-auto px-6 py-8 border-b border-zinc-800">
+        <h3 className="text-zinc-300 font-semibold text-sm mb-4 text-center">How it works</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Step 1 */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-indigo-600/20 rounded-full flex items-center justify-center mb-3 border border-indigo-600/30">
+              <span className="text-indigo-400 font-bold text-lg">1</span>
+            </div>
+            <h4 className="text-zinc-200 font-medium text-sm mb-2">Upload</h4>
+            <p className="text-zinc-500 text-xs leading-relaxed">
+              Drop your .pptx or .pdf file (max 50MB) and get an instant code
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-indigo-600/20 rounded-full flex items-center justify-center mb-3 border border-indigo-600/30">
+              <span className="text-indigo-400 font-bold text-lg">2</span>
+            </div>
+            <h4 className="text-zinc-200 font-medium text-sm mb-2">Share</h4>
+            <p className="text-zinc-500 text-xs leading-relaxed">
+              Copy and share your unique code with anyone, anywhere
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-indigo-600/20 rounded-full flex items-center justify-center mb-3 border border-indigo-600/30">
+              <span className="text-indigo-400 font-bold text-lg">3</span>
+            </div>
+            <h4 className="text-zinc-200 font-medium text-sm mb-2">Present</h4>
+            <p className="text-zinc-500 text-xs leading-relaxed">
+              Enter the code on any device to view instantly. Auto-expires in 24h
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Credits and Contact */}
+      <div className="max-w-4xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+        {/* Left: Developer Credit */}
+        <div className="flex items-center gap-2 text-zinc-400">
+          <span>Developed by</span>
+          <a
+            href="https://github.com/alwayselse"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+            </svg>
+            @alwayselse
+          </a>
+        </div>
+
+        {/* Center: Tagline */}
+        <div className="text-zinc-500 text-xs hidden md:block">
+          Anonymous • Temporary • Simple
+        </div>
+
+        {/* Right: Feedback */}
+        <div className="flex items-center gap-2 text-zinc-400">
+          <span>Feedback:</span>
+          <a
+            href="mailto:nikhilvatsya@gmail.com"
+            className="text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+          >
+            nikhilvatsya@gmail.com
+          </a>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ============================================
 // Component: HomePage
 // ============================================
 function HomePage() {
   return (
-    <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-6">
-      <div className="w-full max-w-4xl flex flex-col items-center gap-12">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-5xl font-bold text-zinc-100 mb-3">linkmydesk</h1>
-          <p className="text-zinc-400 text-lg">Share presentations instantly with a simple code</p>
-        </div>
-
-        {/* Code Entry */}
-        <div className="w-full flex flex-col items-center gap-8">
-          <CodeEntry />
-          
-          <div className="flex items-center gap-4 w-full max-w-2xl">
-            <div className="flex-1 h-px bg-zinc-800"></div>
-            <span className="text-zinc-600 font-medium">OR</span>
-            <div className="flex-1 h-px bg-zinc-800"></div>
+    <div className="min-h-screen bg-zinc-900 flex flex-col">
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-4xl flex flex-col items-center gap-12">
+          {/* Header with Logo */}
+          <div className="text-center space-y-6">
+            <Logo />
+            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+              Share presentations instantly with a simple code. No signup, no tracking, files expire in 24 hours.
+            </p>
           </div>
 
-          {/* Uploader */}
-          <Uploader />
+          {/* Code Entry */}
+          <div className="w-full flex flex-col items-center gap-8">
+            <CodeEntry />
+            
+            <div className="flex items-center gap-4 w-full max-w-2xl">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent"></div>
+              <span className="text-zinc-500 font-medium text-sm px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700">OR UPLOAD NEW</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent"></div>
+            </div>
+
+            {/* Uploader */}
+            <Uploader />
+          </div>
+
+          {/* Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mt-8">
+            <div className="text-center p-4 bg-zinc-800/30 rounded-lg border border-zinc-800">
+              <div className="text-indigo-400 text-2xl mb-2">🔒</div>
+              <h3 className="text-zinc-300 font-semibold text-sm mb-1">Anonymous</h3>
+              <p className="text-zinc-500 text-xs">No accounts required</p>
+            </div>
+            <div className="text-center p-4 bg-zinc-800/30 rounded-lg border border-zinc-800">
+              <div className="text-indigo-400 text-2xl mb-2">⚡</div>
+              <h3 className="text-zinc-300 font-semibold text-sm mb-1">Instant</h3>
+              <p className="text-zinc-500 text-xs">Get code in seconds</p>
+            </div>
+            <div className="text-center p-4 bg-zinc-800/30 rounded-lg border border-zinc-800">
+              <div className="text-indigo-400 text-2xl mb-2">⏱️</div>
+              <h3 className="text-zinc-300 font-semibold text-sm mb-1">Temporary</h3>
+              <p className="text-zinc-500 text-xs">Auto-expires in 24h</p>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
@@ -332,9 +504,29 @@ function ViewerPage() {
 
   // Success State
   return (
-    <div className="fixed inset-0 flex flex-col">
-      {/* Branding Banner */}
-      <div className="h-[10px] bg-indigo-600 w-full"></div>
+    <div className="fixed inset-0 flex flex-col bg-zinc-900">
+      {/* Header with Logo and Back Button */}
+      <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-600/30">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            linkmydesk
+          </span>
+        </div>
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-all duration-200 border border-zinc-700"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back
+        </button>
+      </div>
       
       {/* Display PDF directly or use iframe for Office Viewer */}
       {isPDF ? (
