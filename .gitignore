@@ -1,0 +1,95 @@
+# ============================================
+# Root .gitignore for linkmydesk monorepo
+# ============================================
+
+# ===== SENSITIVE DATA - NEVER COMMIT =====
+# Environment files with secrets
+.env
+.env.*
+*.env
+!.env.example
+
+# Azure credentials and config
+.azure/
+azure.conf
+
+# ===== BACKEND (Python/FastAPI) =====
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/*.py[cod]
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/*.log
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/*.backup
+backend/*.bak
+backend/*.old
+
+# ===== FRONTEND (React/Vite) =====
+# Dependencies
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Build outputs
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+
+# Frontend env files
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.env.*.local
+
+# Vite cache
+frontend/.vite/
+
+# ===== IDE & EDITORS =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+.DS_Store
+
+# ===== OS FILES =====
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# ===== LOGS =====
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# ===== TEMPORARY FILES =====
+*.tmp
+*.temp
+*.cache
+
+# ===== BACKUPS =====
+*.backup
+*.bak
+*.old
+*~
+
+# ===== TESTING =====
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# ===== OTHER =====
+.turbo/
