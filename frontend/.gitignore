@@ -58,3 +58,9 @@ coverage/
 # ESLint cache
 .eslintcache
 .vercel
+
+# Deployment artifacts
+*.zip
+backend-deploy.zip
+frontend-deploy.zip
+azure-publish-profile.xml
