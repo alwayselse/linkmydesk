@@ -1,0 +1,43 @@
+name: Deploy Backend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: 📦 Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 🧪 Run tests (optional)
+      run: |
+        cd backend
+        # Add your test commands here if you have tests
+        # python -m pytest tests/
+        echo "✅ Tests passed"
+    
+    - name: 🚀 Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'linkmydesk-api'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: './backend'
