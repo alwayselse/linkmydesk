@@ -247,7 +247,7 @@ def generate_short_code(length: int = 6) -> str:
 
 def upload_to_blob(file_bytes: bytes, file_name: str, content_type: Optional[str] = None) -> str:
     """
-    Upload file to Azure Blob Storage with proper Content-Type.
+    Upload file to Azure Blob Storage with streaming and parallel chunks for better performance.
     
     Args:
         file_bytes: File content as bytes
@@ -261,6 +261,8 @@ def upload_to_blob(file_bytes: bytes, file_name: str, content_type: Optional[str
         Exception: If upload fails
     """
     try:
+        from io import BytesIO
+        
         blob_client = container_client.get_blob_client(file_name)
         
         # Set Content-Type for proper file recognition
@@ -268,10 +270,14 @@ def upload_to_blob(file_bytes: bytes, file_name: str, content_type: Optional[str
         if content_type:
             content_settings = ContentSettings(content_type=content_type)
         
+        # Use streaming upload for better performance with large files
+        file_stream = BytesIO(file_bytes)
+        
         blob_client.upload_blob(
-            file_bytes, 
+            file_stream, 
             overwrite=True,
-            content_settings=content_settings
+            content_settings=content_settings,
+            max_concurrency=4  # Upload in parallel chunks for faster upload
         )
         blob_url = blob_client.url
         
