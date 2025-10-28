@@ -102,7 +102,6 @@ try:
         pool_recycle=3600,  # Recycle connections after 1 hour
         connect_args={
             "timeout": 60,  # 60 second connection timeout (for serverless wake-up)
-            "connect_timeout": 60
         }
     )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
