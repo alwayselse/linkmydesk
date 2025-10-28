@@ -57,3 +57,4 @@ coverage/
 
 # ESLint cache
 .eslintcache
+.vercel
