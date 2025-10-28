@@ -300,10 +300,12 @@ def delete_from_blob(blob_path: str) -> None:
     """
     try:
         blob_client = container_client.get_blob_client(blob_path)
-        blob_client.delete_blob()
+        blob_client.delete_blob(delete_snapshots="include")  # Delete blob and all snapshots
         logger.info(f"Successfully deleted blob: {blob_path}")
+        print(f"🗑️ Deleted blob from storage: {blob_path}")
     except Exception as e:
         logger.warning(f"Error deleting blob {blob_path}: {e}")
+        print(f"⚠️ Could not delete blob {blob_path}: {e}")
 
 # --- API Endpoints ---
 
@@ -529,17 +531,26 @@ async def get_presentation(short_code: str, db: Session = Depends(get_db)):
         now = datetime.utcnow()
         if expires_at < now:
             print(f"⏰ Presentation expired (now: {now.isoformat()})")
-            # Optional: Delete the expired record and blob
+            
+            # Delete the blob from storage first
             try:
                 delete_from_blob(blob_path)
+            except Exception as e:
+                logger.error(f"Failed to delete blob {blob_path} during expiry cleanup: {e}")
+                print(f"⚠️ Blob deletion failed, but continuing with database cleanup")
+            
+            # Delete from database
+            try:
                 db.execute(
                     text("DELETE FROM Presentations WHERE ShortCode = :short_code"),
                     {"short_code": short_code}
                 )
                 db.commit()
-                print(f"🗑️ Cleaned up expired presentation")
+                print(f"🗑️ Cleaned up expired presentation from database")
             except Exception as e:
-                print(f"⚠️ Cleanup error: {e}")
+                logger.error(f"Database cleanup failed: {e}")
+                db.rollback()
+                print(f"⚠️ Database cleanup error: {e}")
             
             raise HTTPException(
                 status_code=404,
