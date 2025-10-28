@@ -99,9 +99,11 @@ function Uploader() {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [shortCode, setShortCode] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const onDropAccepted = (acceptedFiles) => {
     setFile(acceptedFiles[0]);
+    setUploadProgress(0);
   };
 
   const onDropRejected = () => {
@@ -124,6 +126,7 @@ function Uploader() {
     if (!file) return;
 
     setIsLoading(true);
+    setUploadProgress(0);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -131,22 +134,39 @@ function Uploader() {
       const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
+        },
+        timeout: 300000, // 5 minutes timeout for large files
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
         }
       });
 
       setShortCode(response.data.short_code);
       toast.success('Upload complete!');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Upload failed. Please try again.');
+      let errorMessage = 'Upload failed. Please try again.';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Upload timed out. Please try a smaller file or check your connection.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      toast.error(errorMessage);
       setFile(file); // Keep the file so user can retry
     } finally {
       setIsLoading(false);
+      setUploadProgress(0);
     }
   };
 
   const handleReset = () => {
     setFile(null);
     setShortCode(null);
+    setUploadProgress(0);
   };
 
   // Success State
@@ -166,16 +186,42 @@ function Uploader() {
 
   return (
     <>
-      {/* Loading Overlay */}
+      {/* Loading Overlay with Progress */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="text-center">
-            <div className="relative inline-block mb-6">
-              <div className="w-20 h-20 border-4 border-zinc-700 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-20 h-20 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+        <div className="fixed inset-0 bg-zinc-950/95 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center space-y-6 px-6">
+            {/* Spinner */}
+            <div className="relative w-24 h-24 mx-auto">
+              <div className="absolute inset-0 border-4 border-zinc-700 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <p className="text-zinc-100 text-xl font-semibold mb-2">Uploading your presentation</p>
-            <p className="text-zinc-500 text-sm">This might take a moment...</p>
+            
+            {/* Status Text */}
+            <div className="space-y-2">
+              <p className="text-xl text-zinc-100 font-medium">
+                {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
+              </p>
+              <p className="text-zinc-400">
+                {uploadProgress < 100 
+                  ? `${uploadProgress}% uploaded` 
+                  : 'Generating your code...'}
+              </p>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-80 max-w-full h-2 bg-zinc-800 rounded-full overflow-hidden mx-auto">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            
+            {/* File Info */}
+            {file && (
+              <p className="text-sm text-zinc-500">
+                {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -255,6 +301,19 @@ function Uploader() {
                   <p className="text-sm text-zinc-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
+              
+              {/* Large File Warning */}
+              {file.size > 10 * 1024 * 1024 && (
+                <div className="flex items-start gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-lg max-w-md">
+                  <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="text-xs text-amber-200">
+                    Large file detected. Upload may take 1-2 minutes depending on your connection speed.
+                  </p>
+                </div>
+              )}
+              
               <button
                 onClick={handleUpload}
                 className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/30"
