@@ -7,7 +7,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -31,19 +31,23 @@ jobs:
     - name: 🧪 Run tests (optional)
       run: |
         cd backend
-        # Add your test commands here if you have tests
-        # python -m pytest tests/
         echo "✅ Tests passed"
     
-    - name: � Create deployment package
+    - name: 📦 Create deployment package
       run: |
         cd backend
         zip -r ../backend-deploy.zip . -x "*.pyc" -x "__pycache__/*" -x "venv/*" -x ".env" -x "*.backup" -x "*.log"
         echo "✅ Deployment package created"
     
-    - name: �🚀 Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
+    - name: 🔐 Azure Login
+      uses: azure/login@v1
       with:
-        app-name: 'linkmydesk-api'
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: './backend-deploy.zip'
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: 🚀 Deploy to Azure Web App
+      run: |
+        az webapp deployment source config-zip \
+          --name linkmydesk-api \
+          --resource-group linkmydesk-rg \
+          --src backend-deploy.zip
+        echo "✅ Deployment complete!"
