@@ -35,9 +35,15 @@ jobs:
         # python -m pytest tests/
         echo "✅ Tests passed"
     
-    - name: 🚀 Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
+    - name: � Create deployment package
+      run: |
+        cd backend
+        zip -r ../backend-deploy.zip . -x "*.pyc" -x "__pycache__/*" -x "venv/*" -x ".env" -x "*.backup" -x "*.log"
+        echo "✅ Deployment package created"
+    
+    - name: �🚀 Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
       with:
         app-name: 'linkmydesk-api'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: './backend'
+        package: './backend-deploy.zip'
