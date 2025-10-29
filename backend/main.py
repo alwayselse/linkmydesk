@@ -24,6 +24,7 @@ import urllib.parse
 import logging
 import time
 from datetime import datetime, timedelta
+from io import BytesIO
 from typing import Optional, List
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
@@ -36,7 +37,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import OperationalError
 
 # Azure SDKs
-from azure.storage.blob import BlobServiceClient, ContentSettings
+from azure.storage.blob import BlobServiceClient, ContentSettings, generate_blob_sas, BlobSasPermissions
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -61,6 +62,21 @@ if ENVIRONMENT == "development":
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 AZURE_SQL_CONNECTION_STRING = os.getenv("AZURE_SQL_CONNECTION_STRING")
 CONTAINER_NAME = os.getenv("CONTAINER_NAME", "presentations")
+
+# Parse storage account credentials for SAS token generation
+def parse_storage_connection_string(conn_str: str) -> tuple:
+    """Extract account name and key from connection string."""
+    parts = {}
+    for item in conn_str.split(';'):
+        if '=' in item:
+            key, value = item.split('=', 1)
+            parts[key] = value
+    return parts.get('AccountName'), parts.get('AccountKey')
+
+STORAGE_ACCOUNT_NAME, STORAGE_ACCOUNT_KEY = parse_storage_connection_string(
+    AZURE_STORAGE_CONNECTION_STRING
+) if AZURE_STORAGE_CONNECTION_STRING else (None, None)
+
 
 # CORS configuration
 CORS_ORIGINS_ENV = os.getenv("CORS_ALLOWED_ORIGINS", "")
@@ -280,13 +296,21 @@ def upload_to_blob(file_bytes: bytes, file_name: str, content_type: Optional[str
             content_settings=content_settings,
             max_concurrency=4  # Upload in parallel chunks for faster upload
         )
-        blob_url = blob_client.url
         
-        # Force HTTPS for security
-        if blob_url.startswith('http://'):
-            blob_url = blob_url.replace('http://', 'https://', 1)
+        # Generate SAS token with 24-hour expiry
+        sas_token = generate_blob_sas(
+            account_name=STORAGE_ACCOUNT_NAME,
+            container_name=CONTAINER_NAME,
+            blob_name=file_name,
+            account_key=STORAGE_ACCOUNT_KEY,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(hours=24)
+        )
         
-        logger.info(f"Successfully uploaded blob: {file_name}")
+        # Construct URL with SAS token
+        blob_url = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net/{CONTAINER_NAME}/{file_name}?{sas_token}"
+        
+        logger.info(f"Successfully uploaded blob with 24h SAS token: {file_name}")
         return blob_url
     except Exception as e:
         logger.error(f"Blob upload failed for {file_name}: {e}")
