@@ -192,6 +192,7 @@ class PresentationResponse(BaseModel):
     """Response model for successful file upload."""
     short_code: str
     original_file_name: str
+    viewer_url: str
 
 class ViewerResponse(BaseModel):
     """Response model for presentation retrieval."""
@@ -482,7 +483,8 @@ async def upload_presentation(
     
     return PresentationResponse(
         short_code=short_code,
-        original_file_name=file.filename or "unknown"
+        original_file_name=file.filename or "unknown",
+        viewer_url=viewer_url
     )
 
 @app.get("/get_presentation/{short_code}", response_model=ViewerResponse)

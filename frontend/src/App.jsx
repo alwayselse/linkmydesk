@@ -45,10 +45,15 @@ function CodeEntry() {
 // ============================================
 // Component: SuccessCard
 // ============================================
-function SuccessCard({ shortCode }) {
+function SuccessCard({ shortCode, viewerUrl }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(shortCode);
     toast.success('Code copied to clipboard!');
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(viewerUrl);
+    toast.success('Link copied to clipboard!');
   };
 
   return (
@@ -80,6 +85,33 @@ function SuccessCard({ shortCode }) {
           </button>
         </div>
       </div>
+      
+      {/* Direct Viewer Link Section */}
+      {viewerUrl && (
+        <div className="mb-6 pb-6 border-b border-zinc-700">
+          <p className="text-zinc-400 text-sm mb-3">Or share the direct link:</p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={viewerUrl}
+              readOnly
+              className="flex-1 px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 font-mono"
+            />
+            <button
+              onClick={handleCopyLink}
+              className="px-6 py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Link
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="pt-6 border-t border-zinc-700">
         <p className="text-zinc-500 text-sm">
           ✨ Share this code to let anyone view your presentation
@@ -99,6 +131,7 @@ function Uploader() {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [shortCode, setShortCode] = useState(null);
+  const [viewerUrl, setViewerUrl] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const onDropAccepted = (acceptedFiles) => {
@@ -145,6 +178,7 @@ function Uploader() {
       });
 
       setShortCode(response.data.short_code);
+      setViewerUrl(response.data.viewer_url);
       toast.success('Upload complete!');
     } catch (error) {
       let errorMessage = 'Upload failed. Please try again.';
@@ -166,6 +200,7 @@ function Uploader() {
   const handleReset = () => {
     setFile(null);
     setShortCode(null);
+    setViewerUrl(null);
     setUploadProgress(0);
   };
 
@@ -173,7 +208,7 @@ function Uploader() {
   if (shortCode) {
     return (
       <div className="w-full flex flex-col items-center gap-4">
-        <SuccessCard shortCode={shortCode} />
+        <SuccessCard shortCode={shortCode} viewerUrl={viewerUrl} />
         <button
           onClick={handleReset}
           className="text-zinc-400 hover:text-zinc-100 transition-colors text-sm underline"
