@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, useNavigate, useParams } from 'react-rout
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
+import SharerPanel from './SharerPanel';
+import ScreenViewer from './ScreenViewer';
 
 // API Base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -514,6 +516,14 @@ function HomePage() {
 
             {/* Uploader */}
             <Uploader />
+
+            <div className="flex items-center gap-4 w-full max-w-2xl">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent"></div>
+              <span className="text-zinc-500 font-medium text-xs sm:text-sm px-2 sm:px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700 whitespace-nowrap">OR SHARE SCREEN</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent"></div>
+            </div>
+
+            <SharerPanel />
           </div>
 
           {/* Features */}
@@ -549,8 +559,9 @@ function HomePage() {
 function ViewerPage() {
   const { shortCode } = useParams();
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [viewerType, setViewerType] = useState(null); // 'presentation' | 'screen' | null
   const [viewerUrl, setViewerUrl] = useState(null);
+  const [error, setError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -559,8 +570,20 @@ function ViewerPage() {
       try {
         const response = await axios.get(`${API_BASE_URL}/get_presentation/${shortCode}`);
         setViewerUrl(response.data.viewer_url);
+        setViewerType('presentation');
       } catch (err) {
-        setError(true);
+        // On 404, check if this is a screen share room instead
+        if (err.response?.status === 404) {
+          try {
+            await axios.post(`${API_BASE_URL}/room/screen/join`, { code: shortCode });
+            // Room exists — ScreenViewer will handle its own connection
+            setViewerType('screen');
+          } catch {
+            setError(true);
+          }
+        } else {
+          setError(true);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -601,36 +624,47 @@ function ViewerPage() {
     );
   }
 
-  // Determine if this is a PDF (direct URL) or Office Viewer URL
+  // Shared header used for both presentation and screen viewer
+  const ViewerHeader = () => (
+    <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          linkmydesk
+        </span>
+      </div>
+      <button
+        onClick={() => navigate('/')}
+        className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-all duration-200 border border-zinc-700"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back
+      </button>
+    </div>
+  );
+
+  // Screen share viewer
+  if (viewerType === 'screen') {
+    return (
+      <div className="fixed inset-0 flex flex-col bg-zinc-900">
+        <ViewerHeader />
+        <ScreenViewer code={shortCode} />
+      </div>
+    );
+  }
+
+  // Presentation viewer (PDF or Office Online)
   const isPDF = viewerUrl && !viewerUrl.includes('officeapps.live.com');
 
-  // Success State
   return (
     <div className="fixed inset-0 flex flex-col bg-zinc-900">
-      {/* Header with Logo and Back Button */}
-      <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-600/30">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            linkmydesk
-          </span>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-all duration-200 border border-zinc-700"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back
-        </button>
-      </div>
-      
-      {/* Display PDF directly or use iframe for Office Viewer */}
+      <ViewerHeader />
       {isPDF ? (
         <embed
           src={`${viewerUrl}#toolbar=1&navpanes=0&scrollbar=1`}

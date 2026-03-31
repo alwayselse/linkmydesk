@@ -38,6 +38,7 @@ from sqlalchemy.exc import OperationalError
 
 # Azure SDKs
 from azure.storage.blob import BlobServiceClient, ContentSettings, generate_blob_sas, BlobSasPermissions
+from azure.messaging.webpubsubservice import WebPubSubServiceClient
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -76,6 +77,10 @@ def parse_storage_connection_string(conn_str: str) -> tuple:
 STORAGE_ACCOUNT_NAME, STORAGE_ACCOUNT_KEY = parse_storage_connection_string(
     AZURE_STORAGE_CONNECTION_STRING
 ) if AZURE_STORAGE_CONNECTION_STRING else (None, None)
+
+# Web PubSub configuration
+AZURE_WEBPUBSUB_CONNECTION_STRING = os.getenv("AZURE_WEBPUBSUB_CONNECTION_STRING")
+AZURE_WEBPUBSUB_HUB = os.getenv("AZURE_WEBPUBSUB_HUB", "screenshare")
 
 
 # CORS configuration
@@ -136,6 +141,19 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
+# --- Initialize Azure Web PubSub ---
+webpubsub_client = None
+if AZURE_WEBPUBSUB_CONNECTION_STRING:
+    try:
+        webpubsub_client = WebPubSubServiceClient.from_connection_string(
+            AZURE_WEBPUBSUB_CONNECTION_STRING, hub=AZURE_WEBPUBSUB_HUB
+        )
+        logger.info(f"Web PubSub client initialized for hub: {AZURE_WEBPUBSUB_HUB}")
+    except Exception as e:
+        logger.warning(f"Web PubSub client init failed: {e}")
+else:
+    logger.warning("AZURE_WEBPUBSUB_CONNECTION_STRING not set — screen sharing disabled")
 
 # --- Initialize Azure Blob Storage ---
 logger.info("Initializing Azure Blob Storage client...")
@@ -213,6 +231,10 @@ class PresentationResponse(BaseModel):
 class ViewerResponse(BaseModel):
     """Response model for presentation retrieval."""
     viewer_url: str
+
+class ScreenJoinRequest(BaseModel):
+    """Request model for joining a screen share room."""
+    code: str
 
 # --- Helper Functions ---
 
@@ -591,6 +613,93 @@ async def get_presentation(short_code: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"❌ Database query failed: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+# --- Screen Share Endpoints ---
+
+@app.post("/room/screen/create")
+async def create_screen_room():
+    """
+    Create a new screen sharing room.
+    Generates a short code, stores a marker blob, and returns a WebSocket URL for the sharer.
+    """
+    if not webpubsub_client:
+        raise HTTPException(status_code=503, detail="Screen sharing is not configured on this server.")
+
+    code = generate_short_code()
+
+    # Store a zero-byte marker blob with metadata so viewers can validate the room
+    blob_name = f"screen_{code}"
+    try:
+        blob_client = container_client.get_blob_client(blob_name)
+        expires_ms = str(int((datetime.utcnow() + timedelta(hours=24)).timestamp() * 1000))
+        blob_client.upload_blob(
+            b"",
+            overwrite=True,
+            metadata={"type": "screen", "expires": expires_ms},
+        )
+        logger.info(f"Screen room created: {code}")
+    except Exception as e:
+        logger.error(f"Failed to create screen room blob: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create screen share room.")
+
+    # Issue an access token that grants the sharer send + join permissions for this room's group
+    try:
+        token = webpubsub_client.get_client_access_token(
+            roles=[
+                f"webpubsub.sendToGroup.{code}",
+                f"webpubsub.joinLeaveGroup.{code}",
+            ],
+            groups=[code],
+        )
+    except Exception as e:
+        logger.error(f"Failed to get WebPubSub token for sharer: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get signaling token.")
+
+    return {"code": code, "wsUrl": token["url"]}
+
+
+@app.post("/room/screen/join")
+async def join_screen_room(request: ScreenJoinRequest):
+    """
+    Join an existing screen sharing room as a viewer.
+    Validates the room exists and is not expired, then returns a WebSocket URL.
+    """
+    if not webpubsub_client:
+        raise HTTPException(status_code=503, detail="Screen sharing is not configured on this server.")
+
+    code = request.code
+    blob_name = f"screen_{code}"
+
+    try:
+        blob_client = container_client.get_blob_client(blob_name)
+        props = blob_client.get_blob_properties()
+    except Exception:
+        raise HTTPException(status_code=404, detail="Room not found.")
+
+    metadata = props.metadata or {}
+
+    if metadata.get("type") != "screen":
+        raise HTTPException(status_code=400, detail="Not a screen share room.")
+
+    expires_ms = int(metadata.get("expires", 0))
+    now_ms = int(datetime.utcnow().timestamp() * 1000)
+    if expires_ms < now_ms:
+        raise HTTPException(status_code=410, detail="Room has expired.")
+
+    try:
+        token = webpubsub_client.get_client_access_token(
+            roles=[
+                f"webpubsub.sendToGroup.{code}",
+                f"webpubsub.joinLeaveGroup.{code}",
+            ],
+            groups=[code],
+        )
+    except Exception as e:
+        logger.error(f"Failed to get WebPubSub token for viewer: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get signaling token.")
+
+    return {"wsUrl": token["url"]}
+
 
 # --- Debug endpoint ---
 @app.get("/debug/presentations")
