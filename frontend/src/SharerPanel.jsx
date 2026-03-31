@@ -81,7 +81,7 @@ export default function SharerPanel() {
             style={{ userSelect: 'all' }}
           >
             <p className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-wider font-mono">
-              {code}
+              {code ?? 'Generating…'}
             </p>
           </div>
           <button

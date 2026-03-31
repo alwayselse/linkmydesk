@@ -67,6 +67,10 @@ export function useScreenShare() {
       // 2. Open WebSocket with Azure Web PubSub subprotocol
       const ws = new WebSocket(wsUrl, WS_SUBPROTOCOL);
       wsRef.current = ws;
+      // Handlers must be assigned BEFORE any await — the socket can connect
+      // while getDisplayMedia is open and the onopen event would fire with no handler
+      ws.onopen = () => setIsSharing(true);
+      ws.onerror = () => setError('Signaling connection error');
 
       // 3. Capture screen (try with audio first, silently fall back without)
       let displayStream;
@@ -152,8 +156,7 @@ export function useScreenShare() {
       // 10. If user stops screen share via browser UI, tear down cleanly
       displayStream.getVideoTracks()[0].onended = () => stopSharing();
 
-      ws.onopen = () => setIsSharing(true);
-      ws.onerror = () => setError('Signaling connection error');
+      console.log('room created, code:', roomCode);
     } catch (err) {
       setError(err.message || 'Failed to start sharing');
       stopSharing();
