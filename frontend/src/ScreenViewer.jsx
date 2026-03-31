@@ -15,7 +15,7 @@ const ICE_SERVERS = {
 
 export default function ScreenViewer({ code }) {
   const videoRef = useRef(null);
-  const [status, setStatus] = useState('connecting'); // 'connecting' | 'live' | 'error'
+  const [status, setStatus] = useState('connecting'); // 'connecting' | 'live' | 'ended' | 'error'
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
@@ -123,6 +123,10 @@ export default function ScreenViewer({ code }) {
           setErrorMsg('Connection lost. Please refresh to reconnect.');
         }
       };
+
+      ws.onclose = () => {
+        if (!cancelled) setStatus('ended');
+      };
     }
 
     connect();
@@ -150,6 +154,23 @@ export default function ScreenViewer({ code }) {
           </div>
           <p className="text-zinc-100 text-lg font-semibold mb-2">Can't connect to stream</p>
           <p className="text-zinc-400 text-sm">{errorMsg}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'ended') {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-zinc-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10h6v4H9z" />
+            </svg>
+          </div>
+          <p className="text-zinc-100 text-lg font-semibold mb-2">Stream ended</p>
+          <p className="text-zinc-500 text-sm">The sharer has stopped the screen share.</p>
         </div>
       </div>
     );
