@@ -308,9 +308,6 @@ cp .env.example .env
 npm run dev
 ```
 
-### Docker
-No Dockerfiles or docker-compose configuration are currently committed.
-
 ## 11) Environment Variables
 
 ### Backend (`backend/.env`)
