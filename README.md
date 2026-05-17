@@ -108,23 +108,39 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  participant Sharer
-  participant API
-  participant WPS as Azure Web PubSub
-  participant Viewer
+    participant Sharer
+    participant API
+    participant WPS as Azure Web PubSub
+    participant Viewer
 
-  Sharer->>API: POST /room/screen/create
-  API->>WPS: issue access token (group-scoped)
-  API-->>Sharer: code + wsUrl
-  Sharer->>WPS: connect websocket
+    %% Sharer creates room
+    Sharer->>API: POST /room/screen/create
+    API->>WPS: Generate group-scoped access token
+    API-->>Sharer: roomCode + wsUrl
 
-  Viewer->>API: POST /room/screen/join {code}
-  API-->>Viewer: wsUrl (if marker exists & not expired)
-  Viewer->>WPS: connect websocket
-  Viewer->>Sharer: viewer-joined (group msg)
-  Sharer->>Viewer: WebRTC offer/ICE via WPS
-  Viewer->>Sharer: answer/ICE via WPS
-  Sharer<->>Viewer: Media via WebRTC
+    %% Sharer connects
+    Sharer->>WPS: Connect WebSocket
+
+    %% Viewer joins room
+    Viewer->>API: POST /room/screen/join {roomCode}
+    API-->>Viewer: wsUrl
+
+    %% Viewer connects
+    Viewer->>WPS: Connect WebSocket
+
+    %% Presence notification
+    Viewer->>WPS: viewer-joined
+    WPS-->>Sharer: viewer-joined
+
+    %% WebRTC signaling
+    Sharer->>WPS: WebRTC offer + ICE candidates
+    WPS-->>Viewer: WebRTC offer + ICE candidates
+
+    Viewer->>WPS: WebRTC answer + ICE candidates
+    WPS-->>Sharer: WebRTC answer + ICE candidates
+
+    %% Direct peer connection
+    Sharer<<->>Viewer: Screen media stream (WebRTC P2P)
 ```
 
 ## 4) Tech Stack
